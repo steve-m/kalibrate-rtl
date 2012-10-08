@@ -1,0 +1,8 @@
+rm -rf config.cache autom4te*.cache
+#autoreconf --install
+
+libtoolize --automake
+aclocal
+autoconf
+autoheader
+automake --add-missing
