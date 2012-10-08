@@ -38,6 +38,9 @@ const char *bi_to_str(int bi) {
 		case GSM_850:
 			return "GSM-850";
 
+		case GSM_R_900:
+			return "GSM-R-900";
+
 		case GSM_900:
 			return "GSM-900";
 
@@ -60,6 +63,9 @@ int str_to_bi(char *s) {
 
 	if(!strcmp(s, "GSM850") || !strcmp(s, "GSM-850") || !strcmp(s, "850"))
 		return GSM_850;
+
+	if(!strcmp(s, "GSM-R") || !strcmp(s, "R-GSM"))
+		return GSM_R_900;
 
 	if(!strcmp(s, "GSM900") || !strcmp(s, "GSM-900") || !strcmp(s, "900"))
 		return GSM_900;
@@ -99,9 +105,13 @@ double arfcn_to_freq(int n, int *bi) {
 			*bi = GSM_E_900;
 		return 935e6;
 	}
-	if((975 <= n) && (n <= 1023)) {
-		if(bi)
-			*bi = GSM_E_900;
+	if((955 <= n) && (n <= 1023)) {
+		if(bi) {
+			if (975 <= n)
+				*bi = GSM_E_900;
+			else
+				*bi = GSM_R_900;
+		}
 		return 890.0e6 + 0.2e6 * (n - 1024) + 45.0e6;
 	}
 
@@ -139,6 +149,12 @@ int freq_to_arfcn(double freq, int *bi) {
 		if(bi)
 			*bi = GSM_850;
 		return (int)((freq - 869.2e6) / 0.2e6) + 128;
+	}
+
+	if((921.2e6 <= freq) && (freq <= 925.0e6)) {
+		if(bi)
+			*bi = GSM_R_900;
+		return (int)((freq - 935e6) / 0.2e6) + 1024;
 	}
 
 	if((935.2e6 <= freq) && (freq <= 959.8e6)) {
@@ -181,6 +197,9 @@ int first_chan(int bi) {
 		case GSM_850:
 			return 128;
 
+		case GSM_R_900:
+			return 955;
+
 		case GSM_900:
 			return 1;
 
@@ -209,6 +228,13 @@ int next_chan_loop(int chan, int bi) {
 				return chan + 1;
 			if(chan == 251)
 				return 128;
+			return -1;
+
+		case GSM_R_900:
+			if((955 <= chan) && (chan < 974))
+				return chan + 1;
+			if(chan == 974)
+				return 955;
 			return -1;
 
 		case GSM_900:
@@ -256,6 +282,11 @@ int next_chan(int chan, int bi) {
 	switch(bi) {
 		case GSM_850:
 			if((128 <= chan) && (chan < 251))
+				return chan + 1;
+			return -1;
+
+		case GSM_R_900:
+			if((955 <= chan) && (chan < 974))
 				return chan + 1;
 			return -1;
 

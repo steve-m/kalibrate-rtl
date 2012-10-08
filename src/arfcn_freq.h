@@ -28,6 +28,7 @@
 enum {
 	BI_NOT_DEFINED,
 	GSM_850,
+	GSM_R_900,
 	GSM_900,
 	GSM_E_900,
 	DCS_1800,
