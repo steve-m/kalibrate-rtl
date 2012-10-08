@@ -34,10 +34,6 @@
 #include <math.h>
 #include <complex>
 
-#include <usrp/usrp_standard.h>
-#include <usrp/usrp_subdev_spec.h>
-#include <usrp/usrp_dbid.h>
-
 #include "usrp_source.h"
 
 extern int g_verbosity;
@@ -49,8 +45,6 @@ usrp_source::usrp_source(float sample_rate, long int fpga_master_clock_freq) {
 	m_desired_sample_rate = sample_rate;
 	m_sample_rate = 0.0;
 	m_decimation = 0;
-	m_u_rx.reset();
-	m_db_rx.reset();
 	m_cb = new circular_buffer(CB_LEN, sizeof(complex), 0);
 
 	pthread_mutex_init(&m_u_mutex, 0);
@@ -61,8 +55,6 @@ usrp_source::usrp_source(unsigned int decimation, long int fpga_master_clock_fre
 
 	m_fpga_master_clock_freq = fpga_master_clock_freq;
 	m_sample_rate = 0.0;
-	m_u_rx.reset();
-	m_db_rx.reset();
 	m_cb = new circular_buffer(CB_LEN, sizeof(complex), 0);
 
 	pthread_mutex_init(&m_u_mutex, 0);
@@ -79,6 +71,7 @@ usrp_source::~usrp_source() {
 
 	stop();
 	delete m_cb;
+	rtlsdr_close(dev);
 	pthread_mutex_destroy(&m_u_mutex);
 }
 
@@ -86,10 +79,6 @@ usrp_source::~usrp_source() {
 void usrp_source::stop() {
 
 	pthread_mutex_lock(&m_u_mutex);
-	if(m_db_rx)
-		m_db_rx->set_enable(0);
-	if(m_u_rx)
-		m_u_rx->stop();
 	pthread_mutex_unlock(&m_u_mutex);
 }
 
@@ -97,10 +86,6 @@ void usrp_source::stop() {
 void usrp_source::start() {
 
 	pthread_mutex_lock(&m_u_mutex);
-	if(m_db_rx)
-		m_db_rx->set_enable(1);
-	if(m_u_rx)
-		m_u_rx->start();
 	pthread_mutex_unlock(&m_u_mutex);
 }
 
@@ -109,7 +94,7 @@ void usrp_source::calculate_decimation() {
 
 	float decimation_f;
 
-	decimation_f = (float)m_u_rx->fpga_master_clock_freq() / m_desired_sample_rate;
+//	decimation_f = (float)m_u_rx->fpga_master_clock_freq() / m_desired_sample_rate;
 	m_decimation = (unsigned int)round(decimation_f) & ~1;
 
 	if(m_decimation < 4)
@@ -128,31 +113,42 @@ float usrp_source::sample_rate() {
 
 int usrp_source::tune(double freq) {
 
-	int r;
-	usrp_tune_result tr;
+	int r = 0;
 
 	pthread_mutex_lock(&m_u_mutex);
-	r = m_u_rx->tune(0, m_db_rx, freq, &tr);
+	if (freq != m_center_freq) {
+		r = rtlsdr_set_center_freq(dev, (uint32_t)freq);
+//		fprintf(stderr, "Tuned to %i Hz.\n", (uint32_t)freq);
+		m_center_freq = freq;
+	}
+
 	pthread_mutex_unlock(&m_u_mutex);
 
-	return r;
+	return (r < 0) ? 0 : 1;
 }
 
+int usrp_source::set_freq_correction(int ppm) {
+	m_freq_corr = ppm;
+	return rtlsdr_set_freq_correction(dev, ppm);
+}
 
 bool usrp_source::set_antenna(int antenna) {
 
-	return m_db_rx->select_rx_antenna(antenna);
+	return 0;
 }
 
-
 bool usrp_source::set_gain(float gain) {
+	int r, g = gain * 10;
 
-	float min = m_db_rx->gain_min(), max = m_db_rx->gain_max();
+	/* Enable manual gain */
+	r = rtlsdr_set_tuner_gain_mode(dev, 1);
+	if (r < 0)
+		fprintf(stderr, "WARNING: Failed to enable manual gain.\n");
 
-	if((gain < 0.0) || (1.0 < gain))
-		return false;
+	fprintf(stderr, "Setting gain: %.1f dB\n", gain/10);
+	r = rtlsdr_set_tuner_gain(dev, g);
 
-	return m_db_rx->set_gain(min + gain * (max - min));
+	return (r < 0) ? 0 : 1;
 }
 
 
@@ -160,75 +156,73 @@ bool usrp_source::set_gain(float gain) {
  * open() should be called before multiple threads access usrp_source.
  */
 int usrp_source::open(unsigned int subdev) {
+	int i, r, device_count, count;
+	uint32_t dev_index = subdev;
+	uint32_t samp_rate = 270833;
 
-	int do_set_decim = 0;
-	usrp_subdev_spec ss(subdev, 0);
+	m_sample_rate = 270833.002142;
 
-	if(!m_u_rx) {
-		if(!m_decimation) {
-			do_set_decim = 1;
-			m_decimation = 4;
-		}
-		if(!(m_u_rx = usrp_standard_rx::make(0, m_decimation,
-		   NCHAN, INITIAL_MUX, usrp_standard_rx::FPGA_MODE_NORMAL,
-		   FUSB_BLOCK_SIZE, FUSB_NBLOCKS, FPGA_FILENAME()))) {
-			fprintf(stderr, "error: usrp_standard_rx::make: "
-			   "failed!\n");
-			return -1;
-		}
-		m_u_rx->set_fpga_master_clock_freq(m_fpga_master_clock_freq);
-		m_u_rx->stop();
-
-		if(do_set_decim) {
-			calculate_decimation();
-		}
-
-		m_u_rx->set_decim_rate(m_decimation);
-		m_sample_rate = (double)m_u_rx->fpga_master_clock_freq() / m_decimation;
-
-		if(g_verbosity > 1) {
-			fprintf(stderr, "FPGA clock : %ld\n", m_u_rx->fpga_master_clock_freq());
-			fprintf(stderr, "Decimation : %u\n", m_decimation);
-			fprintf(stderr, "Sample rate: %f\n", m_sample_rate);
-		}
-	}
-	if(!m_u_rx->is_valid(ss)) {
-		fprintf(stderr, "error: invalid daughterboard\n");
-		return -1;
-	}
-	if(!(m_db_rx = m_u_rx->selected_subdev(ss))) {
-		fprintf(stderr, "error: no daughterboard\n");
-		return -1;
+	device_count = rtlsdr_get_device_count();
+	if (!device_count) {
+		fprintf(stderr, "No supported devices found.\n");
+		exit(1);
 	}
 
-	m_u_rx->set_mux(m_u_rx->determine_rx_mux_value(ss));
+	fprintf(stderr, "Found %d device(s):\n", device_count);
+	for (i = 0; i < device_count; i++)
+		fprintf(stderr, "  %d:  %s\n", i, rtlsdr_get_device_name(i));
+	fprintf(stderr, "\n");
 
-	set_gain(0.45);
-	m_db_rx->select_rx_antenna(1); // this is a nop for most db
+	fprintf(stderr, "Using device %d: %s\n",
+		dev_index,
+		rtlsdr_get_device_name(dev_index));
+
+	r = rtlsdr_open(&dev, dev_index);
+	if (r < 0) {
+		fprintf(stderr, "Failed to open rtlsdr device #%d.\n", dev_index);
+		exit(1);
+	}
+
+	/* Set the sample rate */
+	r = rtlsdr_set_sample_rate(dev, samp_rate);
+	if (r < 0)
+		fprintf(stderr, "WARNING: Failed to set sample rate.\n");
+
+	/* Reset endpoint before we start reading from it (mandatory) */
+	r = rtlsdr_reset_buffer(dev);
+	if (r < 0)
+		fprintf(stderr, "WARNING: Failed to reset buffers.\n");
+
+//	r = rtlsdr_set_offset_tuning(dev, 1);
+//	if (r < 0)
+//		fprintf(stderr, "WARNING: Failed to enable offset tuning\n");
 
 	return 0;
 }
 
+#define USB_PACKET_SIZE		(2 * 16384)
+#define FLUSH_SIZE		512
 
-#define USB_PACKET_SIZE 512
 
 int usrp_source::fill(unsigned int num_samples, unsigned int *overrun_i) {
 
 	bool overrun;
 	unsigned char ubuf[USB_PACKET_SIZE];
-	short *s = (short *)ubuf;
 	unsigned int i, j, space, overruns = 0;
 	complex *c;
+	int n_read;
 
 	while((m_cb->data_available() < num_samples) && (m_cb->space_available() > 0)) {
 
 		// read one usb packet from the usrp
 		pthread_mutex_lock(&m_u_mutex);
-		if(m_u_rx->read(ubuf, sizeof(ubuf), &overrun) != sizeof(ubuf)) {
+
+		if (rtlsdr_read_sync(dev, ubuf, sizeof(ubuf), &n_read) < 0) {
 			pthread_mutex_unlock(&m_u_mutex);
 			fprintf(stderr, "error: usrp_standard_rx::read\n");
 			return -1;
 		}
+
 		pthread_mutex_unlock(&m_u_mutex);
 		if(overrun)
 			overruns++;
@@ -237,12 +231,11 @@ int usrp_source::fill(unsigned int num_samples, unsigned int *overrun_i) {
 		c = (complex *)m_cb->poke(&space);
 
 		// set space to number of complex items to copy
-		if(space > (USB_PACKET_SIZE >> 2))
-			space = USB_PACKET_SIZE >> 2;
+		space = n_read / 2;
 
 		// write data
 		for(i = 0, j = 0; i < space; i += 1, j += 2)
-			c[i] = complex(s[j], s[j + 1]);
+			c[i] = complex((ubuf[j] - 127) * 256, (ubuf[j + 1] - 127) * 256);
 
 		// update cb
 		m_cb->wrote(i);
@@ -290,7 +283,7 @@ circular_buffer *usrp_source::get_buffer() {
 int usrp_source::flush(unsigned int flush_count) {
 
 	m_cb->flush();
-	fill(flush_count * USB_PACKET_SIZE, 0);
+	fill(flush_count * FLUSH_SIZE, 0);
 	m_cb->flush();
 
 	return 0;

@@ -67,7 +67,8 @@ int g_debug = 0;
 
 void usage(char *prog) {
 
-	printf("kalibrate v%s, Copyright (c) 2010, Joshua Lackey\n", kal_version_string);
+	printf("kalibrate v%s-rtl, Copyright (c) 2010, Joshua Lackey\n", kal_version_string);
+	printf("modified for use with rtl-sdr devices, Copyright (c) 2012, Steve Markgraf");
 	printf("\nUsage:\n");
 	printf("\tGSM Base Station Scan:\n");
 	printf("\t\t%s <-s band indicator> [options]\n", basename(prog));
@@ -80,10 +81,9 @@ void usage(char *prog) {
 	printf("\t-f\tfrequency of nearby GSM base station\n");
 	printf("\t-c\tchannel of nearby GSM base station\n");
 	printf("\t-b\tband indicator (GSM850, GSM900, EGSM, DCS, PCS)\n");
-	printf("\t-R\tside A (0) or B (1), defaults to B\n");
-	printf("\t-A\tantenna TX/RX (0) or RX2 (1), defaults to RX2\n");
-	printf("\t-g\tgain as %% of range, defaults to 45%%\n");
-	printf("\t-F\tFPGA master clock frequency, defaults to 52MHz\n");
+	printf("\t-g\tgain in dB\n");
+	printf("\t-d\trtl-sdr device index\n");
+	printf("\t-e\tinitial frequency error in ppm\n");
 	printf("\t-v\tverbose\n");
 	printf("\t-D\tenable debug messages\n");
 	printf("\t-h\thelp\n");
@@ -95,13 +95,14 @@ int main(int argc, char **argv) {
 
 	char *endptr;
 	int c, antenna = 1, bi = BI_NOT_DEFINED, chan = -1, bts_scan = 0;
-	unsigned int subdev = 1, decimation = 192;
+	int ppm_error = 0;
+	unsigned int subdev = 0, decimation = 192;
 	long int fpga_master_clock_freq = 52000000;
-	float gain = 0.45;
+	float gain = 0;
 	double freq = -1.0, fd;
 	usrp_source *u;
 
-	while((c = getopt(argc, argv, "f:c:s:b:R:A:g:F:vDh?")) != EOF) {
+	while((c = getopt(argc, argv, "f:c:s:b:R:A:g:e:d:vDh?")) != EOF) {
 		switch(c) {
 			case 'f':
 				freq = strtod(optarg, 0);
@@ -163,11 +164,7 @@ int main(int argc, char **argv) {
 				break;
 
 			case 'g':
-				gain = strtod(optarg, 0);
-				if((gain > 1.0) && (gain <= 100.0))
-					gain /= 100.0;
-				if((gain < 0.0) || (1.0 < gain))
-					usage(argv[0]);
+				gain = strtof(optarg, 0) * 10;
 				break;
 
 			case 'F':
@@ -179,6 +176,14 @@ int main(int argc, char **argv) {
 				if(fpga_master_clock_freq < 1000) {
 					fpga_master_clock_freq *= 1000000;
 				}
+				break;
+
+			case 'e':
+				ppm_error = strtol(optarg, 0, 0);
+				break;
+
+			case 'd':
+				subdev = strtol(optarg, 0, 0);
 				break;
 
 			case 'v':
@@ -221,6 +226,7 @@ int main(int argc, char **argv) {
 		chan = freq_to_arfcn(freq, &bi);
 	}
 
+#if 0
 	// sanity check clock
 	if(fpga_master_clock_freq < 48000000) {
 		fprintf(stderr, "error: FPGA master clock too slow: %li\n", fpga_master_clock_freq);
@@ -230,7 +236,7 @@ int main(int argc, char **argv) {
 	// calculate decimation -- get as close to GSM rate as we can
 	fd = (double)fpga_master_clock_freq / GSM_RATE;
 	decimation = (unsigned int)fd;
-
+#endif
 	if(g_debug) {
 #ifdef D_HOST_OSX
 		printf("debug: Mac OS X version\n");
@@ -251,10 +257,19 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "error: usrp_source::open\n");
 		return -1;
 	}
-	u->set_antenna(antenna);
-	if(!u->set_gain(gain)) {
-		fprintf(stderr, "error: usrp_source::set_gain\n");
-		return -1;
+//	u->set_antenna(antenna);
+	if (gain != 0) {
+		if(!u->set_gain(gain)) {
+			fprintf(stderr, "error: usrp_source::set_gain\n");
+			return -1;
+		}
+	}
+
+	if (ppm_error != 0) {
+		if(u->set_freq_correction(ppm_error) < 0) {
+			fprintf(stderr, "error: usrp_source::set_freq_correction\n");
+			return -1;
+		}
 	}
 
 	if(!bts_scan) {

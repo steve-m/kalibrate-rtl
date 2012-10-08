@@ -25,7 +25,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <usrp/usrp_standard.h>
+#include <rtl-sdr.h>
 
 #include "usrp_complex.h"
 #include "circular_buffer.h"
@@ -41,6 +41,7 @@ public:
 	int read(complex *buf, unsigned int num_samples, unsigned int *samples_read);
 	int fill(unsigned int num_samples, unsigned int *overrun);
 	int tune(double freq);
+	int set_freq_correction(int ppm);
 	bool set_antenna(int antenna);
 	bool set_gain(float gain);
 	void start();
@@ -53,11 +54,13 @@ public:
 	static const unsigned int side_A = 0;
 	static const unsigned int side_B = 1;
 
+	double			m_center_freq;
+	int			m_freq_corr;
+
 private:
 	void calculate_decimation();
 
-	usrp_standard_rx_sptr	m_u_rx;
-	db_base_sptr		m_db_rx;
+	rtlsdr_dev_t		*dev;
 
 	float			m_sample_rate;
 	float			m_desired_sample_rate;
@@ -74,7 +77,7 @@ private:
 	pthread_mutex_t		m_u_mutex;
 
 	static const unsigned int	FLUSH_COUNT	= 10;
-	static const unsigned int	CB_LEN		= (1 << 20);
+	static const unsigned int	CB_LEN		= (16 * 16384);
 	static const int		NCHAN		= 1;
 	static const int		INITIAL_MUX	= -1;
 	static const int		FUSB_BLOCK_SIZE	= 1024;
