@@ -79,7 +79,7 @@ int c0_detect(usrp_source *u, int bi) {
 	}
 	u->start();
 	u->flush();
-	for(i = first_chan(bi); i > 0; i = next_chan(i, bi)) {
+	for(i = first_chan(bi); i >= 0; i = next_chan(i, bi)) {
 		freq = arfcn_to_freq(i, &bi);
 		if(!u->tune(freq)) {
 			fprintf(stderr, "error: usrp_source::tune\n");
@@ -111,7 +111,7 @@ int c0_detect(usrp_source *u, int bi) {
 	 * channels when we construct the average.
 	 */
 	chan_count = 0;
-	for(i = first_chan(bi); i > 0; i = next_chan(i, bi)) {
+	for(i = first_chan(bi); i >= 0; i = next_chan(i, bi)) {
 		spower[chan_count++] = power[i];
 	}
 	sort(spower, chan_count);
@@ -166,7 +166,7 @@ int c0_detect(usrp_source *u, int bi) {
 				i = next_chan(i, bi);
 			}
 		}
-	} while(i > 0);
+	} while(i >= 0);
 
 	return 0;
 }

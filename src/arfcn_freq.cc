@@ -95,7 +95,7 @@ double arfcn_to_freq(int n, int *bi) {
 	}
 
 	if((1 <= n) && (n <= 124)) {
-		if(bi)
+		if(bi && (*bi != GSM_E_900))
 			*bi = GSM_900;
 		return 890.0e6 + 0.2e6 * n + 45.0e6;
 	}
