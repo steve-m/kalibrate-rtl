@@ -206,7 +206,6 @@ int usrp_source::open(unsigned int subdev) {
 
 int usrp_source::fill(unsigned int num_samples, unsigned int *overrun_i) {
 
-	bool overrun;
 	unsigned char ubuf[USB_PACKET_SIZE];
 	unsigned int i, j, space, overruns = 0;
 	complex *c;
@@ -224,8 +223,6 @@ int usrp_source::fill(unsigned int num_samples, unsigned int *overrun_i) {
 		}
 
 		pthread_mutex_unlock(&m_u_mutex);
-		if(overrun)
-			overruns++;
 
 		// write complex<short> input to complex<float> output
 		c = (complex *)m_cb->poke(&space);
