@@ -28,9 +28,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 #include <string.h>
 #include <pthread.h>
+#define _USE_MATH_DEFINES
 #include <math.h>
 #include <complex>
 
@@ -38,6 +41,10 @@
 
 extern int g_verbosity;
 
+
+#ifdef _WIN32
+inline double round(double x) { return floor(x + 0.5); }
+#endif
 
 usrp_source::usrp_source(float sample_rate, long int fpga_master_clock_freq) {
 

@@ -29,6 +29,9 @@
 #include "fcch_detector.h"
 #include "util.h"
 
+#ifdef _WIN32
+inline double round(double x) { return floor(x + 0.5); }
+#endif
 
 static const unsigned int	AVG_COUNT	= 100;
 static const unsigned int	AVG_THRESHOLD	= (AVG_COUNT / 10);
@@ -39,7 +42,7 @@ extern int g_verbosity;
 
 int offset_detect(usrp_source *u) {
 
-	static const double GSM_RATE = 1625000.0 / 6.0;
+#define GSM_RATE (1625000.0 / 6.0)
 
 	unsigned int new_overruns = 0, overruns = 0;
 	int notfound = 0;

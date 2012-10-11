@@ -39,6 +39,10 @@ extern int g_verbosity;
 
 static const float ERROR_DETECT_OFFSET_MAX = 40e3;
 
+#ifdef _WIN32
+#define BUFSIZ 1024
+#endif
+
 static double vectornorm2(const complex *v, const unsigned int len) {
 
 	unsigned int i;
@@ -53,8 +57,8 @@ static double vectornorm2(const complex *v, const unsigned int len) {
 
 int c0_detect(usrp_source *u, int bi) {
 
-	static const double GSM_RATE = 1625000.0 / 6.0;
-	static const unsigned int NOTFOUND_MAX = 10;
+#define GSM_RATE (1625000.0 / 6.0)
+#define  NOTFOUND_MAX 10
 
 	int i, chan_count;
 	unsigned int overruns, b_len, frames_len, found_count, notfound_count, r;

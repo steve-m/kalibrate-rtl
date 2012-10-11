@@ -44,12 +44,15 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#ifndef _WIN32
 #include <unistd.h>
+#include <sys/time.h>
+#endif
 #ifdef D_HOST_OSX
 #include <libgen.h>
 #endif /* D_HOST_OSX */
 #include <string.h>
-#include <sys/time.h>
+
 #include <errno.h>
 
 #include "usrp_source.h"
@@ -58,8 +61,13 @@
 #include "offset.h"
 #include "c0_detect.h"
 #include "version.h"
+#ifdef _WIN32
+#include <getopt.h>
+#define basename(x) "meh"
+#define strtof strtod
+#endif
 
-static const double GSM_RATE = 1625000.0 / 6.0;
+#define GSM_RATE (1625000.0 / 6.0)
 
 
 int g_verbosity = 0;

@@ -60,6 +60,7 @@ fcch_detector::fcch_detector(const float sample_rate, const unsigned int D,
 	char plan_name[BUFSIZ];
 	const char *home;
 
+
 	m_D = D;
 	m_p = p;
 	m_G = G;
@@ -74,15 +75,15 @@ fcch_detector::fcch_detector(const float sample_rate, const unsigned int D,
 	m_w = new complex[m_w_len];
 	memset(m_w, 0, sizeof(complex) * m_w_len);
 
-	m_x_cb = new circular_buffer(1024, sizeof(complex), 0);
-	m_y_cb = new circular_buffer(1024, sizeof(complex), 1);
-	m_e_cb = new circular_buffer(1000000, sizeof(float), 0);
+	m_x_cb = new circular_buffer(8192, sizeof(complex), 0);
+	m_y_cb = new circular_buffer(8192, sizeof(complex), 1);
+	m_e_cb = new circular_buffer(1015808, sizeof(float), 0);
 
 	m_in = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * FFT_SIZE);
 	m_out = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * FFT_SIZE);
 	if((!m_in) || (!m_out))
 		throw std::runtime_error("fcch_detector: fftw_malloc failed!");
-
+#ifndef _WIN32
 	home = getenv("HOME");
 	if(strlen(home) + strlen(fftw_plan_name) + 2 < sizeof(plan_name)) {
 		strcpy(plan_name, home);
@@ -99,6 +100,7 @@ fcch_detector::fcch_detector(const float sample_rate, const unsigned int D,
 			fclose(plan_fp);
 		}
 	} else
+#endif
 		m_plan = fftw_plan_dft_1d(FFT_SIZE, m_in, m_out, FFTW_FORWARD,
 		   FFTW_ESTIMATE);
 	if(!m_plan)
@@ -315,8 +317,7 @@ float fcch_detector::freq_detect(const complex *s, const unsigned int s_len, flo
 	fftw_execute(m_plan);
 
 	for(i = 0; i < FFT_SIZE; i++) {
-		fft[i].real() = m_out[i][0];
-		fft[i].imag() = m_out[i][1];
+		fft[i] = complex(m_out[i][0], m_out[i][1]);
 	}
 
 	max_i = peak_detect(fft, FFT_SIZE, &peak, &avg_power);

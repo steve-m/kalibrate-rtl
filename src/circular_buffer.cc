@@ -31,24 +31,29 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#ifndef _WIN32
 #include <unistd.h>
+#include <sys/ipc.h>
+#endif
 #include <string.h>
 #include <pthread.h>
 #include <stdexcept>
-#include <sys/ipc.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #ifndef D_HOST_OSX
+#ifndef _WIN32
 #include <sys/shm.h>
+#endif
 #else
 #include <sys/mman.h>
 #include <fcntl.h>
 #endif /* !D_HOST_OSX */
 
 #include "circular_buffer.h"
-
+//#include <cstdio>
 
 #ifndef D_HOST_OSX
+#ifndef _WIN32
 circular_buffer::circular_buffer(const unsigned int buf_len,
    const unsigned int item_size, const unsigned int overwrite) {
 
@@ -171,7 +176,6 @@ circular_buffer::circular_buffer(const unsigned int buf_len,
 	pthread_mutex_init(&m_mutex, 0);
 }
 
-
 circular_buffer::~circular_buffer() {
 
 	shmdt((char *)m_base + m_pagesize + 2 * m_buf_size);
@@ -179,6 +183,92 @@ circular_buffer::~circular_buffer() {
 	shmdt((char *)m_base + m_pagesize);
 	shmdt((char *)m_base);
 }
+
+#else
+circular_buffer::circular_buffer(const unsigned int buf_len,
+   const unsigned int item_size, const unsigned int overwrite) {
+
+	if(!buf_len)
+		throw std::runtime_error("circular_buffer: buffer len is 0");
+
+	if(!item_size)
+		throw std::runtime_error("circular_buffer: item size is 0");
+
+	// calculate buffer size
+	m_item_size = item_size;
+	m_buf_size = item_size * buf_len;
+	m_buf_len = m_buf_size / item_size;
+
+
+  d_handle = CreateFileMapping(INVALID_HANDLE_VALUE,    // use paging file
+			       NULL,                    // default security
+			       PAGE_READWRITE,          // read/write access
+			       0,                       // max. object size
+			       m_buf_size,                    // buffer size
+			       NULL);       // name of mapping object
+
+
+  if (d_handle == NULL || d_handle == INVALID_HANDLE_VALUE){
+    throw std::runtime_error ("gr_vmcircbuf_mmap_createfilemapping");
+  }
+
+  // Allocate virtual memory of the needed size, then free it so we can use it
+  LPVOID first_tmp;
+  first_tmp = VirtualAlloc( NULL, 2*m_buf_size, MEM_RESERVE, PAGE_NOACCESS );
+  if (first_tmp == NULL){
+    CloseHandle(d_handle);         // cleanup
+    throw std::runtime_error ("gr_vmcircbuf_mmap_createfilemapping");
+  }
+
+  if (VirtualFree(first_tmp, 0, MEM_RELEASE) == 0){
+    CloseHandle(d_handle);         // cleanup
+    throw std::runtime_error ("gr_vmcircbuf_mmap_createfilemapping");
+  }
+
+  d_first_copy =  MapViewOfFileEx((HANDLE)d_handle,   // handle to map object
+				   FILE_MAP_WRITE,    // read/write permission
+				   0,
+				   0,
+				   m_buf_size,
+				   first_tmp);
+  if (d_first_copy != first_tmp){
+    CloseHandle(d_handle);         // cleanup
+    throw std::runtime_error ("gr_vmcircbuf_mmap_createfilemapping");
+  }
+
+  d_second_copy =  MapViewOfFileEx((HANDLE)d_handle,   // handle to map object
+				   FILE_MAP_WRITE,     // read/write permission
+				   0,
+				   0,
+				   m_buf_size,
+				   (char *)first_tmp + m_buf_size);//(LPVOID) ((char *)d_first_copy + size));
+
+  if (d_second_copy != (char *)first_tmp + m_buf_size){
+    UnmapViewOfFile(d_first_copy);
+    CloseHandle(d_handle);                      // cleanup
+    throw std::runtime_error ("gr_vmcircbuf_mmap_createfilemapping");
+  }
+
+	// save a pointer to the data
+	m_buf = d_first_copy;// (char *)base + m_pagesize;
+
+	m_r = m_w = 0;
+	m_read = m_written = 0;
+
+	m_item_size = item_size;
+
+	m_overwrite = overwrite;
+
+	pthread_mutex_init(&m_mutex, 0);
+
+  }
+
+circular_buffer::~circular_buffer() {
+	UnmapViewOfFile(d_first_copy);
+	UnmapViewOfFile(d_second_copy);
+	CloseHandle(d_handle);
+}
+#endif
 #else /* !D_HOST_OSX */
 
 

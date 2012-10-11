@@ -45,6 +45,9 @@
  */
 
 #include <pthread.h>
+#ifdef _WIN32
+#include <Windows.h>
+#endif
 
 class circular_buffer {
 public:
@@ -66,6 +69,11 @@ public:
 	unsigned int buf_len();
 
 private:
+#ifdef _WIN32
+	HANDLE d_handle;
+	LPVOID d_first_copy;
+	LPVOID d_second_copy;
+#endif
 	void *m_buf;
 	unsigned int m_buf_len, m_buf_size, m_r, m_w, m_item_size;
 	unsigned long long m_read, m_written;
