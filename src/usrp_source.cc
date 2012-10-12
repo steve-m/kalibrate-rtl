@@ -126,12 +126,16 @@ int usrp_source::tune(double freq) {
 	if (freq != m_center_freq) {
 		r = rtlsdr_set_center_freq(dev, (uint32_t)freq);
 //		fprintf(stderr, "Tuned to %i Hz.\n", (uint32_t)freq);
-		m_center_freq = freq;
+
+		if (r < 0)
+			fprintf(stderr, "Tuning to %lu Hz failed!\n", (uint32_t)freq);
+		else
+			m_center_freq = freq;
 	}
 
 	pthread_mutex_unlock(&m_u_mutex);
 
-	return (r < 0) ? 0 : 1;
+	return 1; //(r < 0) ? 0 : 1;
 }
 
 int usrp_source::set_freq_correction(int ppm) {
