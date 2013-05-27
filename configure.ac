@@ -32,11 +32,7 @@ AC_SUBST(LIBRTLSDR_CFLAGS)
 
 # OSX doesn't support System V shared memory
 AC_CANONICAL_HOST
-case "$host_os" in
-	darwin*)
-		AC_DEFINE([D_HOST_OSX], [], [building for OSX])
-		;;
-esac
+AC_DEFINE([D_HOST_OSX], [], [building for OSX])
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile])
