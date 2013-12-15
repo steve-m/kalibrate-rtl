@@ -1,7 +1,8 @@
 rm -rf config.cache autom4te*.cache
 #autoreconf --install
 
-libtoolize --automake
+case `uname` in Darwin*) glibtoolize --automake ;;
+  *) libtoolize --automake ;; esac
 aclocal
 autoconf
 autoheader
