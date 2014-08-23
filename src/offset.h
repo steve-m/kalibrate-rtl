@@ -25,4 +25,4 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-int offset_detect(usrp_source *u);
+int offset_detect(usrp_source *u, int hz_adjust);
