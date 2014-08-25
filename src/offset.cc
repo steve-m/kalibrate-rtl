@@ -40,7 +40,7 @@ static const float		OFFSET_MAX	= 40e3;
 extern int g_verbosity;
 
 
-int offset_detect(usrp_source *u, float tuner_error) {
+int offset_detect(usrp_source *u, int hz_adjust, float tuner_error) {
 
 #define GSM_RATE (1625000.0 / 6.0)
 
@@ -122,7 +122,7 @@ int offset_detect(usrp_source *u, float tuner_error) {
 	printf("overruns: %u\n", overruns);
 	printf("not found: %u\n", notfound);
 
-	total_ppm = u->m_freq_corr - (avg_offset / u->m_center_freq) * 1000000;
+	total_ppm = u->m_freq_corr - ((avg_offset + hz_adjust) / u->m_center_freq) * 1000000;
 
 	printf("average absolute error: %.3f ppm\n", total_ppm);
 	return 0;
