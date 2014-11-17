@@ -92,6 +92,7 @@ void usage(char *prog) {
 	printf("\t-g\tgain in dB\n");
 	printf("\t-d\trtl-sdr device index\n");
 	printf("\t-e\tinitial frequency error in ppm\n");
+    printf("\t-N\tdisable dithering (default: dithering enabled)\n");
 	printf("\t-v\tverbose\n");
 	printf("\t-D\tenable debug messages\n");
 	printf("\t-h\thelp\n");
@@ -104,13 +105,14 @@ int main(int argc, char **argv) {
 	char *endptr;
 	int c, antenna = 1, bi = BI_NOT_DEFINED, chan = -1, bts_scan = 0;
 	int ppm_error = 0;
+    int dithering = true;
 	unsigned int subdev = 0, decimation = 192;
 	long int fpga_master_clock_freq = 52000000;
 	float gain = 0;
 	double freq = -1.0, fd;
 	usrp_source *u;
 
-	while((c = getopt(argc, argv, "f:c:s:b:R:A:g:e:d:vDh?")) != EOF) {
+    while((c = getopt(argc, argv, "f:c:s:b:R:A:g:e:Nd:vDh?")) != EOF) {
 		switch(c) {
 			case 'f':
 				freq = strtod(optarg, 0);
@@ -190,6 +192,10 @@ int main(int argc, char **argv) {
 				ppm_error = strtol(optarg, 0, 0);
 				break;
 
+            case 'N':
+                dithering = false;
+                break;
+
 			case 'd':
 				subdev = strtol(optarg, 0, 0);
 				break;
@@ -265,6 +271,12 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "error: usrp_source::open\n");
 		return -1;
 	}
+
+    /* Enable/disable dithering */
+    if (!u->set_dithering(dithering)) {
+        fprintf(stderr, "error: usrp_source::set_dithering\n");
+    }
+
 //	u->set_antenna(antenna);
 	if (gain != 0) {
 		if(!u->set_gain(gain)) {

@@ -147,6 +147,10 @@ bool usrp_source::set_antenna(int antenna) {
 	return 0;
 }
 
+bool usrp_source::set_dithering(bool enable) {
+    return (bool)(!rtlsdr_set_dithering(dev, (int)enable));
+}
+
 bool usrp_source::set_gain(float gain) {
 	int r, g = gain * 10;
 
