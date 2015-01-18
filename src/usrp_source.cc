@@ -53,6 +53,7 @@ usrp_source::usrp_source(float sample_rate, long int fpga_master_clock_freq) {
 	m_sample_rate = 0.0;
 	m_decimation = 0;
 	m_cb = new circular_buffer(CB_LEN, sizeof(complex), 0);
+	m_freq_corr = 0;
 
 	pthread_mutex_init(&m_u_mutex, 0);
 }
@@ -63,6 +64,7 @@ usrp_source::usrp_source(unsigned int decimation, long int fpga_master_clock_fre
 	m_fpga_master_clock_freq = fpga_master_clock_freq;
 	m_sample_rate = 0.0;
 	m_cb = new circular_buffer(CB_LEN, sizeof(complex), 0);
+	m_freq_corr = 0;
 
 	pthread_mutex_init(&m_u_mutex, 0);
 
