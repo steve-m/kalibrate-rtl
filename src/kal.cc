@@ -290,8 +290,10 @@ int main(int argc, char **argv) {
 		   basename(argv[0]));
 		fprintf(stderr, "Using %s channel %d (%.1fMHz)\n",
 		   bi_to_str(bi), chan, freq / 1e6);
+		fprintf(stderr, "Tuned to %.6fMHz (tuner error: %.0fHz)\n",
+		   u->m_center_freq / 1e6, u->m_center_freq - freq);
 
-		return offset_detect(u);
+		return offset_detect(u, u->m_center_freq - freq);
 	}
 
 	fprintf(stderr, "%s: Scanning for %s base stations.\n",

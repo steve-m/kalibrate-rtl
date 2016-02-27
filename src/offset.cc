@@ -40,7 +40,7 @@ static const float		OFFSET_MAX	= 40e3;
 extern int g_verbosity;
 
 
-int offset_detect(usrp_source *u) {
+int offset_detect(usrp_source *u, float tuner_error) {
 
 #define GSM_RATE (1625000.0 / 6.0)
 
@@ -87,7 +87,7 @@ int offset_detect(usrp_source *u) {
 		if(l->scan(cbuf, b_len, &offset, &consumed)) {
 
 			// FCH is a sine wave at GSM_RATE / 4
-			offset = offset - GSM_RATE / 4;
+			offset = offset - GSM_RATE / 4 - tuner_error;
 
 			// sanity check offset
 			if(fabs(offset) < OFFSET_MAX) {
