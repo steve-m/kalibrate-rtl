@@ -157,9 +157,9 @@ int c0_detect(usrp_source *u, int bi) {
 		r = l->scan(b, b_len, &offset, 0);
 		if(r && (fabsf(offset - GSM_RATE / 4) < ERROR_DETECT_OFFSET_MAX)) {
 			// found
-			printf("\tchan: %d (%.1fMHz ", i, freq / 1e6);
+			printf("\tchan: %4d (%.1fMHz ", i, freq / 1e6);
 			display_freq(offset - GSM_RATE / 4);
-			printf(")\tpower: %6.2lf\n", power[i]);
+			printf(")\tpower: %10.2f\n", power[i]);
 			notfound_count = 0;
 			i = next_chan(i, bi);
 		} else {
