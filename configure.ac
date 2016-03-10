@@ -35,6 +35,12 @@ AC_CANONICAL_HOST
 case "$host_os" in
 	darwin*)
 		AC_DEFINE([D_HOST_OSX], [], [building for OSX])
+		LRT_FLAGS=""
+		AC_SUBST(LRT_FLAGS)
+		;;
+	*)
+		LRT_FLAGS="-lrt"
+		AC_SUBST(LRT_FLAGS)
 		;;
 esac
 
