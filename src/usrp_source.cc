@@ -152,7 +152,11 @@ bool usrp_source::set_antenna(int antenna) {
 }
 
 bool usrp_source::set_dithering(bool enable) {
+#if HAVE_DITHERING == 1
 	return (bool)(!rtlsdr_set_dithering(dev, (int)enable));
+#else
+	return false;
+#endif
 }
 
 bool usrp_source::set_gain(float gain) {

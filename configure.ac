@@ -29,6 +29,9 @@ AC_SUBST(FFTW3_CFLAGS)
 PKG_CHECK_MODULES(LIBRTLSDR, librtlsdr)
 AC_SUBST(LIBRTLSDR_LIBS)
 AC_SUBST(LIBRTLSDR_CFLAGS)
+AC_CHECK_LIB([rtlsdr], [rtlsdr_set_dithering],
+			 [AC_DEFINE([HAVE_DITHERING], [1], [Dithering available in rtlsdr])],
+			 [AC_DEFINE([HAVE_DITHERING], [0], [Dithering not available in rtlsdr])])
 
 # OSX doesn't support System V shared memory
 AC_CANONICAL_HOST

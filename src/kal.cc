@@ -92,7 +92,9 @@ void usage(char *prog) {
 	printf("\t-g\tgain in dB\n");
 	printf("\t-d\trtl-sdr device index\n");
 	printf("\t-e\tinitial frequency error in ppm\n");
+#if HAVE_DITHERING == 1
 	printf("\t-N\tdisable dithering (default: dithering enabled)\n");
+#endif
 	printf("\t-E\tmanual frequency offset in hz\n");
 	printf("\t-v\tverbose\n");
 	printf("\t-D\tenable debug messages\n");
