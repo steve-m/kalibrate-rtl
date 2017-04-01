@@ -51,6 +51,9 @@ case "$host_cpu" in
 	arm*)
 		AC_DEFINE([D_HOST_OSX], [], [building without shared memory])
 		;;
+	mips*)
+		AC_DEFINE([D_HOST_OSX], [], [building without shared memory])
+		;;
 esac
 
 AC_CONFIG_FILES([Makefile
