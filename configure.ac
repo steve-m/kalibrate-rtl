@@ -11,7 +11,7 @@ AC_PROG_LN_S
 AC_PROG_RANLIB
 
 # Checks for header files.
-AC_CHECK_HEADERS([stdlib.h string.h sys/time.h unistd.h])
+AC_CHECK_HEADERS([stdlib.h string.h sys/time.h unistd.h libgen.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
@@ -49,9 +49,6 @@ esac
 
 case "$host_cpu" in
 	arm*)
-		AC_DEFINE([D_HOST_OSX], [], [building without shared memory])
-		;;
-	mips*)
 		AC_DEFINE([D_HOST_OSX], [], [building without shared memory])
 		;;
 esac

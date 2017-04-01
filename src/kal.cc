@@ -48,9 +48,9 @@
 #include <unistd.h>
 #include <sys/time.h>
 #endif
-#ifdef D_HOST_OSX
+#ifdef HAVE_LIBGEN_H
 #include <libgen.h>
-#endif /* D_HOST_OSX */
+#endif
 #include <string.h>
 
 #include <errno.h>
