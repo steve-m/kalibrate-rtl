@@ -1,3 +1,4 @@
+#!/bin/bash
 rm -rf config.cache autom4te*.cache
 #autoreconf --install
 
