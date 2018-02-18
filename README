@@ -5,7 +5,7 @@ offset.
 
 How to install:
 
-git clone https://github.com/steve-m/kalibrate-rtl
+git clone https://github.com/viraptor/kalibrate-rtl
 cd kalibrate-rtl
 ./bootstrap && CXXFLAGS='-W -Wall -O3'
 ./configure
