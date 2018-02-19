@@ -66,7 +66,7 @@ int c0_detect(usrp_source *u, int bi) {
 	double freq, sps, n, power[BUFSIZ], sum = 0, a;
 	complex *b;
 	circular_buffer *ub;
-	fcch_detector *l = new fcch_detector(u->sample_rate());
+	fcch_detector *detector = new fcch_detector(u->sample_rate());
 
 	if(bi == BI_NOT_DEFINED) {
 		fprintf(stderr, "error: c0_detect: band not defined\n");
@@ -154,7 +154,7 @@ int c0_detect(usrp_source *u, int bi) {
 		} while(overruns);
 
 		b = (complex *)ub->peek(&b_len);
-		r = l->scan(b, b_len, &offset, 0);
+		r = detector->scan(b, b_len, &offset, 0);
 		if(r && (fabsf(offset - GSM_RATE / 4) < ERROR_DETECT_OFFSET_MAX)) {
 			// found
 			printf("\tchan: %4d (%.1fMHz ", i, freq / 1e6);
