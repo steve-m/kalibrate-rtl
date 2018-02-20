@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "usrp_source.h"
 #include "circular_buffer.h"
@@ -62,7 +63,7 @@ int c0_detect(usrp_source *u, int bi) {
 
 	int i, chan_count;
 	unsigned int overruns, b_len, frames_len, found_count, notfound_count, r;
-	float offset, spower[BUFSIZ];
+	float offset, spower[BUFSIZ], effective_offset, min_offset, max_offset;
 	double freq, sps, n, power[BUFSIZ], sum = 0, a;
 	complex *b;
 	circular_buffer *ub;
@@ -138,6 +139,10 @@ int c0_detect(usrp_source *u, int bi) {
 			i = next_chan(i, bi);
 			continue;
 		}
+		if (isatty(1)) {
+			printf("...chan %i\r", i);
+			fflush(stdout);
+		}
 
 		freq = arfcn_to_freq(i, &bi);
 		if(!u->tune(freq)) {
@@ -155,11 +160,19 @@ int c0_detect(usrp_source *u, int bi) {
 
 		b = (complex *)ub->peek(&b_len);
 		r = detector->scan(b, b_len, &offset, 0);
-		if(r && (fabsf(offset - GSM_RATE / 4) < ERROR_DETECT_OFFSET_MAX)) {
+		effective_offset = offset - GSM_RATE / 4;
+		if(r && (fabsf(effective_offset) < ERROR_DETECT_OFFSET_MAX)) {
 			// found
-			printf("\tchan: %4d (%.1fMHz ", i, freq / 1e6);
-			display_freq(offset - GSM_RATE / 4);
-			printf(")\tpower: %10.2f\n", power[i]);
+			if (found_count) {
+				min_offset = fmin(min_offset, effective_offset);
+				max_offset = fmax(max_offset, effective_offset);
+			} else {
+				min_offset = max_offset = effective_offset;
+			}
+			found_count++;
+			printf("    chan: %4d (%.1fMHz ", i, freq / 1e6);
+			display_freq(effective_offset);
+			printf(")    power: %10.2f\n", power[i]);
 			notfound_count = 0;
 			i = next_chan(i, bi);
 		} else {
@@ -172,5 +185,22 @@ int c0_detect(usrp_source *u, int bi) {
 		}
 	} while(i >= 0);
 
+	if (found_count == 1) {
+		printf("\n");
+		printf("Only one channel was found. This is unlikely and may "
+			"indicate you need to provide a rough estimate of the initial "
+			"PPM. It can be provided with the '-e' option. Try tuning against "
+			"a local FM radio or other known frequency first.\n");
+	}
+	/*
+	 * If the difference in offsets found is strangely large
+	 */
+	if (found_count > 1 && max_offset - min_offset > 1000) {
+		printf("\n");
+		printf("Difference of offsets between channels is >1kHz. This likely "
+			"means that the correct PPM is too far away and you need to provide "
+			"a rough estimate using the '-e' option. Try tuning against "
+			"a local FM radio or other known frequency first.\n");
+	}
 	return 0;
 }
