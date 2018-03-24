@@ -46,7 +46,7 @@ Any noise in the system affects the measurements and so kal averages the results
 HOW
 ===
 
-kal uses the GNU Autoconf system and should be easily built on most *nix platforms.
+kal uses the GNU Autoconf system and should be easily built on most \*nix platforms.
 
 ```
 jl@thinkfoo:~/src$ cd kal-v0.4.1
@@ -94,10 +94,13 @@ WHO
 ===
 
 I'd like to thank Alexander Chemeris for his valuable input, ideas, and his testing of a large number of alpha versions. I'd also like to thank Mark J. Blair for his help getting kal to work with Mac OS X.
+
 I'd also like to thank Mark J. Blair for his help getting kal to work with Mac OS X. (And also for helping me realize that I never actually used the -F parameter...)
-Copyright (c) 2010, Joshua Lackey (jl@thre.at)
-modified for use with rtl-sdr devices,
+
+Copyright (c) 2010, Joshua Lackey (jl@thre.at) modified for use with rtl-sdr devices,
+
 Copyright (c) 2012, Steve Markgraf (steve@steve-m.de)
+
 Current maintenance: Stan Pitucha (viraptor@gmail.com)
 
 
