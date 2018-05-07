@@ -1,0 +1,13 @@
+language: c
+compiler:
+    - gcc
+    - clang
+
+script: ./bootstrap && ./configure && make
+
+addons:
+    apt:
+        packages:
+            - libfftw3-dev
+            - librtlsdr-dev
+            - libusb-1.0-0-dev
