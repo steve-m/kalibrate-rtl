@@ -11,4 +11,4 @@ addons:
         packages:
             - libfftw3-dev
             - librtlsdr-dev
-            - libusb-1.0-dev
+            - libusb-1.0-0-dev
