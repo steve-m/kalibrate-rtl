@@ -4,7 +4,7 @@ compiler:
     - clang
 
 before_install:
-    - ./bootstrap.sh
+    - ./bootstrap
 
 addons:
     apt:
