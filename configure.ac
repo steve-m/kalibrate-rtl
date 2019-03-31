@@ -44,6 +44,12 @@ case "$host_cpu" in
 		;;
 esac
 
+case "$host_cpu" in
+	mips*)
+		AC_DEFINE([D_HOST_OSX], [], [building without shared memory])
+		;;
+esac
+
 AC_CONFIG_FILES([Makefile
                  src/Makefile])
 AC_OUTPUT
