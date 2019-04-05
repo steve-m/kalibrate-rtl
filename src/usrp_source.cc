@@ -112,7 +112,9 @@ void usrp_source::calculate_decimation() {
 
 
 float usrp_source::sample_rate() {
-
+	if(g_debug) {
+		printf("debug: sample_rate            :\t%u\n", m_sample_rate);
+	}
 	return m_sample_rate;
 
 }
@@ -129,6 +131,9 @@ int usrp_source::tune(double freq) {
 		if (r < 0)
 			fprintf(stderr, "Tuning to %u Hz failed!\n", (uint32_t)freq);
 		else
+			if(g_debug) {
+				printf("debug: trun to frequency     :\t%u\n", freq);
+			}
 			m_center_freq = freq;
 	}
 
