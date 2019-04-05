@@ -40,7 +40,7 @@
 #include "usrp_source.h"
 
 extern int g_verbosity;
-
+extern int g_debug;
 
 #ifdef _WIN32
 inline double round(double x) { return floor(x + 0.5); }
