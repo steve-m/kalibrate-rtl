@@ -35,7 +35,7 @@ inline double round(double x) { return floor(x + 0.5); }
 
 static const unsigned int	AVG_COUNT	= 100;
 static const unsigned int	AVG_THRESHOLD	= (AVG_COUNT / 10);
-static const float		OFFSET_MAX	= 40e3;
+static const float		OFFSET_MAX	= 100e3;
 
 extern int g_verbosity;
 
