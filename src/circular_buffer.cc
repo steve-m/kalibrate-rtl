@@ -52,6 +52,8 @@
 #include "circular_buffer.h"
 //#include <cstdio>
 
+extern int g_debug;
+
 #ifndef D_HOST_OSX
 #ifndef _WIN32
 circular_buffer::circular_buffer(const unsigned int buf_len,
