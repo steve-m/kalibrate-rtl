@@ -38,7 +38,7 @@ static const unsigned int	AVG_THRESHOLD	= (AVG_COUNT / 10);
 static const float		OFFSET_MAX	= 100e3;
 
 extern int g_verbosity;
-
+extern int g_debug;
 
 int offset_detect(usrp_source *u) {
 
