@@ -2,6 +2,9 @@ language: c
 compiler:
     - gcc
     - clang
+os:
+    - osx
+    - linux
 
 script: ./bootstrap && ./configure && make
 
@@ -11,3 +14,7 @@ addons:
             - libfftw3-dev
             - librtlsdr-dev
             - libusb-1.0-0-dev
+
+before_install:
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update ; fi
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install fftw librtlsdr libusb ; fi
