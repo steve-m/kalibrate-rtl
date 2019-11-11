@@ -48,9 +48,9 @@
 #include <unistd.h>
 #include <sys/time.h>
 #endif
-#ifdef D_HOST_OSX
+#if defined(D_HOST_OSX) || defined(D_HOST_OPENBSD)
 #include <libgen.h>
-#endif /* D_HOST_OSX */
+#endif /* D_HOST_OSX || D_HOST_OPENBSD*/
 #include <string.h>
 
 #include <errno.h>
