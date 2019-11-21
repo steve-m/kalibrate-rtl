@@ -22,6 +22,8 @@ AC_FUNC_STRTOD
 AC_CHECK_FUNCS([floor getpagesize memset sqrt strtoul strtol])
 
 # Checks for libraries.
+AC_SEARCH_LIBS([basename], [rt])
+
 PKG_CHECK_MODULES(FFTW3, fftw3 >= 3.0)
 AC_SUBST(FFTW3_LIBS)
 AC_SUBST(FFTW3_CFLAGS)
@@ -44,6 +46,9 @@ case "$host_os" in
 	*)
 		LRT_FLAGS="-lrt"
 		AC_SUBST(LRT_FLAGS)
+		;;
+	openbsd*)
+		AC_DEFINE([D_HOST_OPENBSD], [], [building for OpenBSD])
 		;;
 esac
 
