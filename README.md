@@ -101,6 +101,6 @@ Copyright (c) 2010, Joshua Lackey (jl@thre.at) modified for use with rtl-sdr dev
 
 Copyright (c) 2012, Steve Markgraf (steve@steve-m.de)
 
-Current maintenance: Stan Pitucha (viraptor@gmail.com)
+Temporary maintenance: Stan Pitucha (viraptor@gmail.com)
 
 
