@@ -26,6 +26,10 @@
  */
 
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #ifndef _WIN32
@@ -50,9 +54,11 @@ usrp_source::usrp_source(float sample_rate, long int fpga_master_clock_freq) {
 
 	m_fpga_master_clock_freq = fpga_master_clock_freq;
 	m_desired_sample_rate = sample_rate;
+	m_center_freq = 0.0;
 	m_sample_rate = 0.0;
 	m_decimation = 0;
 	m_cb = new circular_buffer(CB_LEN, sizeof(complex), 0);
+	m_freq_corr = 0;
 
 	pthread_mutex_init(&m_u_mutex, 0);
 }
@@ -61,8 +67,10 @@ usrp_source::usrp_source(float sample_rate, long int fpga_master_clock_freq) {
 usrp_source::usrp_source(unsigned int decimation, long int fpga_master_clock_freq) {
 
 	m_fpga_master_clock_freq = fpga_master_clock_freq;
+	m_center_freq = 0.0;
 	m_sample_rate = 0.0;
 	m_cb = new circular_buffer(CB_LEN, sizeof(complex), 0);
+	m_freq_corr = 0;
 
 	pthread_mutex_init(&m_u_mutex, 0);
 
@@ -129,7 +137,7 @@ int usrp_source::tune(double freq) {
 		if (r < 0)
 			fprintf(stderr, "Tuning to %u Hz failed!\n", (uint32_t)freq);
 		else
-			m_center_freq = freq;
+			m_center_freq = rtlsdr_get_center_freq(dev);
 	}
 
 	pthread_mutex_unlock(&m_u_mutex);
@@ -145,6 +153,14 @@ int usrp_source::set_freq_correction(int ppm) {
 bool usrp_source::set_antenna(int antenna) {
 
 	return 0;
+}
+
+bool usrp_source::set_dithering(bool enable) {
+#if HAVE_DITHERING == 1
+	return (bool)(!rtlsdr_set_dithering(dev, (int)enable));
+#else
+	return true;
+#endif
 }
 
 bool usrp_source::set_gain(float gain) {

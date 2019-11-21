@@ -48,9 +48,9 @@
 #include <unistd.h>
 #include <sys/time.h>
 #endif
-#if defined(D_HOST_OSX) || defined(D_HOST_OPENBSD)
+#ifdef HAVE_LIBGEN_H
 #include <libgen.h>
-#endif /* D_HOST_OSX || D_HOST_OPENBSD*/
+#endif
 #include <string.h>
 
 #include <errno.h>
@@ -92,6 +92,10 @@ void usage(char *prog) {
 	printf("\t-g\tgain in dB\n");
 	printf("\t-d\trtl-sdr device index\n");
 	printf("\t-e\tinitial frequency error in ppm\n");
+#if HAVE_DITHERING == 1
+	printf("\t-N\tdisable dithering (default: dithering enabled)\n");
+#endif
+	printf("\t-E\tmanual frequency offset in hz\n");
 	printf("\t-v\tverbose\n");
 	printf("\t-D\tenable debug messages\n");
 	printf("\t-h\thelp\n");
@@ -103,14 +107,15 @@ int main(int argc, char **argv) {
 
 	char *endptr;
 	int c, antenna = 1, bi = BI_NOT_DEFINED, chan = -1, bts_scan = 0;
-	int ppm_error = 0;
+	int ppm_error = 0, hz_adjust = 0;
+	int dithering = true;
 	unsigned int subdev = 0, decimation = 192;
 	long int fpga_master_clock_freq = 52000000;
 	float gain = 0;
 	double freq = -1.0, fd;
 	usrp_source *u;
 
-	while((c = getopt(argc, argv, "f:c:s:b:R:A:g:e:d:vDh?")) != EOF) {
+	while((c = getopt(argc, argv, "f:c:s:b:R:A:g:e:E:Nd:vDh?")) != EOF) {
 		switch(c) {
 			case 'f':
 				freq = strtod(optarg, 0);
@@ -190,6 +195,14 @@ int main(int argc, char **argv) {
 				ppm_error = strtol(optarg, 0, 0);
 				break;
 
+			case 'N':
+				dithering = false;
+				break;
+
+			case 'E':
+				hz_adjust = strtol(optarg, 0, 0);
+				break;
+
 			case 'd':
 				subdev = strtol(optarg, 0, 0);
 				break;
@@ -265,6 +278,12 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "error: usrp_source::open\n");
 		return -1;
 	}
+
+	/* Enable/disable dithering */
+	if (!u->set_dithering(dithering)) {
+		fprintf(stderr, "error: usrp_source::set_dithering\n");
+	}
+
 //	u->set_antenna(antenna);
 	if (gain != 0) {
 		if(!u->set_gain(gain)) {
@@ -281,17 +300,21 @@ int main(int argc, char **argv) {
 	}
 
 	if(!bts_scan) {
-		if(!u->tune(freq)) {
+		if(!u->tune(freq+hz_adjust)) {
 			fprintf(stderr, "error: usrp_source::tune\n");
 			return -1;
 		}
+
+		double tuner_error = u->m_center_freq - freq;
 
 		fprintf(stderr, "%s: Calculating clock frequency offset.\n",
 		   basename(argv[0]));
 		fprintf(stderr, "Using %s channel %d (%.1fMHz)\n",
 		   bi_to_str(bi), chan, freq / 1e6);
+		fprintf(stderr, "Tuned to %.6fMHz (reported tuner error: %.0fHz)\n",
+		   u->m_center_freq / 1e6, tuner_error);
 
-		return offset_detect(u);
+		return offset_detect(u, hz_adjust, tuner_error);
 	}
 
 	fprintf(stderr, "%s: Scanning for %s base stations.\n",
