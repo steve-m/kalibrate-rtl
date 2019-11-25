@@ -43,12 +43,12 @@ case "$host_os" in
 		LRT_FLAGS=""
 		AC_SUBST(LRT_FLAGS)
 		;;
+	openbsd*)
+		AC_DEFINE([D_HOST_OPENBSD], [], [building for OpenBSD])
+		;;
 	*)
 		LRT_FLAGS="-lrt"
 		AC_SUBST(LRT_FLAGS)
-		;;
-	openbsd*)
-		AC_DEFINE([D_HOST_OPENBSD], [], [building for OpenBSD])
 		;;
 esac
 
