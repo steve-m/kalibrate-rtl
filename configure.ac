@@ -53,7 +53,7 @@ case "$host_os" in
 esac
 
 case "$host_cpu" in
-	arm*)
+	arm*|mips*)
 		AC_DEFINE([D_HOST_OSX], [], [building without shared memory])
 		;;
 esac
