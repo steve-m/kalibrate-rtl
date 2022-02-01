@@ -48,6 +48,12 @@ HOW
 
 kal uses the GNU Autoconf system and should be easily built on most \*nix platforms.
 
+Debian example:
+```
+$ git clone https://github.com/steve-m/kalibrate-rtl.git
+$ sudo apt-get install libtool libfftw3-dev
+```
+
 ```
 jl@thinkfoo:~/src$ cd kal-v0.4.1
 jl@thinkfoo:~/src/kal-v0.4.1$ ./bootstrap && CXXFLAGS='-W -Wall -O3' ./configure && make
