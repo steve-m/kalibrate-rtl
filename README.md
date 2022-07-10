@@ -51,7 +51,7 @@ kal uses the GNU Autoconf system and should be easily built on most \*nix platfo
 Debian example:
 ```
 $ git clone https://github.com/steve-m/kalibrate-rtl.git
-$ sudo apt-get install libtool libfftw3-dev
+$ sudo apt-get install libtool libfftw3-dev m4 librtlsdr-dev automake
 ```
 
 ```
